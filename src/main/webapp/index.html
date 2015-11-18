@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>GeoTrack</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script type="text/javascript" src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
+    </head>
+    <body>
+        <style>
+            html, body,#map {
+                width: 100%; height: 100%; padding: 0; margin: 0;
+            }
+            #flex{
+                display: flex;
+            }
+            #map {
+                /*height: 100%;
+                width: calc( 100% - 210px );
+                */z-index: 1 !important;
+                position: absolute;
+            }
+
+            #tracker,
+            #status{
+                display:inline-block;
+                width: 200px;
+                height: 24px;
+                left: 10px;
+                z-index: 99999;
+                text-align: center;
+                position: absolute;
+                padding-top: 6px;
+                font-family: Helvetica,Verdana;
+                font-size: 14px;
+                font-weight: bold;
+                color: #666;
+                background: white;
+            }
+
+            #status{
+                top: 40px;
+            }
+
+            #tracker{
+                top: 75px;
+                background-color: #E5C9F2;
+            }
+
+            #tracker a{
+                font-family: Helvetica,Verdana;
+                font-size: 14px;
+                font-weight: bold;
+                color: #666;
+                text-decoration: none;
+            }
+
+            #status.home{
+                background:  #B3FF9E;
+            }
+
+            #status.trip{
+                background:  #FFFD9E;
+            }
+
+            #status.job{
+                background:  #FF9E9E;
+            }
+        </style>
+        <div id="flex">
+            <div id="status">Статус</div>
+            <div id="tracker"><a href="track.html">Маяк</a></div>
+            <div id="map"></div>
+        </div>
+
+        <script type="text/javascript">
+            ymaps.ready(function () {
+                var myMap = new ymaps.Map('map', {
+                    center: [55.751574, 37.573856],
+                    zoom: 8
+                });
+
+                var myPlacemark = null;
+                var myPlacemarkOld = null;
+                var pos = null;
+
+                var status = [
+                    {
+                        text: 'Дом',
+                        style: 'home',
+                        point: [55.625957, 37.859729],
+                        radius: 0.01
+                    },
+                    {
+                        text: 'Работа',
+                        style: 'job',
+                        point: [55.788015, 37.610523],
+                        radius: 0.03
+                    }, {
+                        text: 'В пути',
+                        style: 'trip',
+                        point: null,
+                        radius: null
+                    }
+                ];
+
+
+                var checkStat = function (pos) {
+                    var curStat = null;
+                    if (pos === null || pos.length !== 2) {
+                        return;
+                    }
+
+                    var x = pos[0];
+                    var y = pos[1];
+                    var iter;
+                    for (var i in status) {
+                        iter = status[i];
+
+                        var matchX = Math.abs(iter.point[0] - x) <= iter.radius;
+                        var matchY = Math.abs(iter.point[1] - y) <= iter.radius;
+
+                        if (matchX && matchY) {
+                            curStat = iter;
+                            break;
+                        }
+                    }
+                    if (curStat) {
+                        $('#status').text(curStat.text).removeClass().addClass(curStat.style);
+                    }
+                };
+
+
+                setInterval(function () {
+                    $.get("getPos", {
+                        param1: "param1",
+                        param2: 2
+                    }, function onAjaxSuccess(data) {
+                        try {
+                            var o = JSON.parse(data);
+                            checkStat(pos = [o.posX, o.posY]);
+                        } catch (e) {
+                            pos = null;
+                        }
+                    });
+
+                    if (!pos) {
+                        return;
+                    }
+                    myPlacemark = new ymaps.Placemark(pos, {
+                        hintContent: '',
+                        balloonContent: 'Местоположение:' + pos[0] + ' ' + pos[1]
+                    }, {
+                        iconLayout: 'default#image',
+                        iconImageHref: 'http://www.southshorecva.com/sitecore/includes/plugins/maps/v2/assets/markers/map_point.png',
+                        iconImageSize: [23, 33],
+                        iconImageOffset: [0, -16]
+                    });
+                    if (myPlacemarkOld) {
+                        myMap.geoObjects.remove(myPlacemarkOld);
+                    }
+                    myMap.geoObjects.add(myPlacemark);
+                    myPlacemarkOld = myPlacemark;
+                }, 2000);
+            });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <title>Tracking</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    </head>
+    <body>
+        <h1>Tracking...</h1>
+        <script type="text/javascript">
+            setInterval(function () {
+                navigator.geolocation.getCurrentPosition(function (loc) {
+                    var lat = loc.coords.latitude;
+                    var lon = loc.coords.longitude;
+                    $.post('track', {data: {posX: lat, posY: lon}});
+                });
+            }, 5000);
+        </script>
+    </body>
+</html>
